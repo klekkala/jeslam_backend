@@ -36,8 +36,6 @@
 #include "ORBVocabulary.h"
 #include "Viewer.h"
 
-#include "IMU/imudata.h"
-
 namespace ORB_SLAM2
 {
 
@@ -50,10 +48,6 @@ class LoopClosing;
 
 class System
 {
-public:
-    bool bLocalMapAcceptKF(void);
-    void SaveKeyFrameTrajectoryNavState(const string& filename);
-
 public:
     // Input sensor
     enum eSensor{
@@ -82,12 +76,15 @@ public:
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
-    cv::Mat TrackMonoVI(const cv::Mat &im, const std::vector<IMUData> &vimu, const double &timestamp);
 
     // This stops local mapping thread (map building) and performs only camera tracking.
     void ActivateLocalizationMode();
     // This resumes local mapping thread and performs SLAM again.
     void DeactivateLocalizationMode();
+
+    // Returns true if there have been a big map change (loop closure, global BA)
+    // since last call to this function
+    bool MapChanged();
 
     // Reset the system (clear map)
     void Reset();
@@ -118,6 +115,12 @@ public:
     // TODO: Save/Load functions
     // SaveMap(const string &filename);
     // LoadMap(const string &filename);
+
+    // Information from most recent processed frame
+    // You can call this right after TrackMonocular (or stereo or RGBD)
+    int GetTrackingState();
+    std::vector<MapPoint*> GetTrackedMapPoints();
+    std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
 private:
 
@@ -157,8 +160,6 @@ private:
     std::thread* mptLoopClosing;
     std::thread* mptViewer;
 
-    std::thread* mptLocalMappingVIOInit;
-
     // Reset flag
     std::mutex mMutexReset;
     bool mbReset;
@@ -167,6 +168,12 @@ private:
     std::mutex mMutexMode;
     bool mbActivateLocalizationMode;
     bool mbDeactivateLocalizationMode;
+
+    // Tracking state
+    int mTrackingState;
+    std::vector<MapPoint*> mTrackedMapPoints;
+    std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
+    std::mutex mMutexState;
 };
 
 }// namespace ORB_SLAM

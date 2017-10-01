@@ -25,34 +25,7 @@
 namespace ORB_SLAM2
 {
 
-bool KFIdComapre::operator ()(const KeyFrame* kfleft,const KeyFrame* kfright) const
-{
-    return kfleft->mnId < kfright->mnId;
-}
-
-void Map::UpdateScale(const double &scale)
-{
-    unique_lock<mutex> lock(mMutexMapUpdate);
-    for(std::set<KeyFrame*,KFIdComapre>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++)
-    {
-        KeyFrame* pKF = *sit;
-        cv::Mat Tcw = pKF->GetPose();
-        cv::Mat tcw = Tcw.rowRange(0,3).col(3)*scale;
-        tcw.copyTo(Tcw.rowRange(0,3).col(3));
-        pKF->SetPose(Tcw);
-    }
-    for(std::set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
-    {
-        MapPoint* pMP = *sit;
-        //pMP->SetWorldPos(pMP->GetWorldPos()*scale);
-        pMP->UpdateScale(scale);
-    }
-    std::cout<<std::endl<<"... Map scale updated ..."<<std::endl<<std::endl;
-}
-
-//---------------------------------------
-
-Map::Map():mnMaxKFid(0)
+Map::Map():mnMaxKFid(0),mnBigChangeIdx(0)
 {
 }
 
@@ -92,6 +65,18 @@ void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
 {
     unique_lock<mutex> lock(mMutexMap);
     mvpReferenceMapPoints = vpMPs;
+}
+
+void Map::InformNewBigChange()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    mnBigChangeIdx++;
+}
+
+int Map::GetLastBigChangeIdx()
+{
+    unique_lock<mutex> lock(mMutexMap);
+    return mnBigChangeIdx;
 }
 
 vector<KeyFrame*> Map::GetAllKeyFrames()

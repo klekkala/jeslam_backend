@@ -33,9 +33,6 @@ FrameDrawer::FrameDrawer(Map* pMap):mpMap(pMap)
 {
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
-
-    mStartTime = -1;
-    mCurTime = -1;
 }
 
 cv::Mat FrameDrawer::DrawFrame()
@@ -94,7 +91,8 @@ cv::Mat FrameDrawer::DrawFrame()
         mnTracked=0;
         mnTrackedVO=0;
         const float r = 5;
-        for(int i=0;i<N;i++)
+        const int n = vCurrentKeys.size();
+        for(int i=0;i<n;i++)
         {
             if(vbVO[i] || vbMap[i])
             {
@@ -156,8 +154,6 @@ void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
         s << " LOADING ORB VOCABULARY. PLEASE WAIT...";
     }
 
-    s << " | Time: " << mCurTime - mStartTime;
-
     int baseline=0;
     cv::Size textSize = cv::getTextSize(s.str(),cv::FONT_HERSHEY_PLAIN,1,1,&baseline);
 
@@ -202,10 +198,6 @@ void FrameDrawer::Update(Tracking *pTracker)
         }
     }
     mState=static_cast<int>(pTracker->mLastProcessedState);
-
-    mCurTime = pTracker->mCurrentFrame.mTimeStamp;
-    if(mStartTime<0)
-        mStartTime = mCurTime;
 }
 
 } //namespace ORB_SLAM

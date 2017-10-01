@@ -35,19 +35,8 @@ namespace ORB_SLAM2
 class MapPoint;
 class KeyFrame;
 
-class KFIdComapre
-{
-public:
-    bool operator()(const KeyFrame* kfleft,const KeyFrame* kfright) const;
-};
-
 class Map
 {
-public:
-    // Update after an absolute scale is available
-    void UpdateScale(const double &scale);
-
-    //-----------------------------------------
 public:
     Map();
 
@@ -56,6 +45,8 @@ public:
     void EraseMapPoint(MapPoint* pMP);
     void EraseKeyFrame(KeyFrame* pKF);
     void SetReferenceMapPoints(const std::vector<MapPoint*> &vpMPs);
+    void InformNewBigChange();
+    int GetLastBigChangeIdx();
 
     std::vector<KeyFrame*> GetAllKeyFrames();
     std::vector<MapPoint*> GetAllMapPoints();
@@ -77,11 +68,14 @@ public:
 
 protected:
     std::set<MapPoint*> mspMapPoints;
-    std::set<KeyFrame*,KFIdComapre> mspKeyFrames;
+    std::set<KeyFrame*> mspKeyFrames;
 
     std::vector<MapPoint*> mvpReferenceMapPoints;
 
     long unsigned int mnMaxKFid;
+
+    // Index related to a big change in the map (loop closure, global BA)
+    int mnBigChangeIdx;
 
     std::mutex mMutexMap;
 };
